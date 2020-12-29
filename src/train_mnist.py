@@ -16,13 +16,13 @@ To replicate the experiments from the paper, you can train new versions of each
 model by running this script with the following parameters:
 
   AE_5: --K=5 --variational=0
- VAE_5: --K=5 --variational=1 --kl_penalty=1
-  TC_5: --K=5 --variational=1 --kl_penalty=1 --tc_penalty=9
+ VAE_5: --K=5 --variational=1
+  TC_5: --K=5 --variational=1 --tc_penalty=9
   IG_5: (see below)
-  SS_5: --K=5 --variational=1 --kl_penalty=1 --tc_penalty=9 --semi_supervised=1
+  SS_5: --K=5 --variational=1 --tc_penalty=9 --semi_supervised=1
  AE_10: --K=10 --variational=0
- TC_10: --K=10 --variational=1 --kl_penalty=1 --tc_penalty=9
- SS_10: --K=10 --variational=1 --kl_penalty=1 --tc_penalty=9 --semi_supervised=1
+ TC_10: --K=10 --variational=1 --tc_penalty=9
+ SS_10: --K=10 --variational=1 --tc_penalty=9 --semi_supervised=1
 
 To train the InfoGAN, see
 https://github.com/dtak/tensorpack/commit/929f1c819fb1943a72436d9958b2f19d96c5e6a5

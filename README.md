@@ -6,12 +6,15 @@ Reconstruction."](TODO)
 
 ## Main Idea
 
-There are now a [number](TODO) [of](TODO) [tools](TODO) for explaining and evaluating how well
-humans understand _discriminative_ machine learning models. Discriminative
-models generally have complicated, high-dimensional inputs (like images, audio
-waveforms, blocks of text, medical timeseries of labs and vitals, etc), but
-relatively low-dimensional outputs (e.g. a single 0-1 probability, or maybe a
-categorical prediction over a fixed number of options). Because of this
+There are now [a](https://arxiv.org/abs/1702.08608)
+[number](https://github.com/marcotcr/lime)
+[of](https://ieeexplore.ieee.org/abstract/document/6645235)
+[approaches](https://arxiv.org/abs/1805.11571) for explaining and evaluating
+how well humans understand _discriminative_ machine learning models.
+Discriminative models generally have complicated, high-dimensional inputs (like
+images, audio waveforms, blocks of text, medical timeseries of labs and vitals,
+etc), but relatively low-dimensional outputs (e.g. a single 0-1 probability, or
+maybe a categorical prediction over a fixed number of options). Because of this
 relatively simple structure, it can often be (comparatively) easy to visualize
 how discriminative model outputs change with changes in their inputs, or to
 evaluate whether human users understand that relationship for different models.
@@ -19,19 +22,26 @@ evaluate whether human users understand that relationship for different models.
 However, there is another important category of machine learning models called
 _generative_ models, which often have the opposite structure: their inputs can
 be relatively simple (e.g. low-dimensional vectors), while their outputs are
-generally complicated (e.g. the same examples as we gave for discriminative
-model inputs). The purpose of generative models isn't to predict something like
-a probability, but instead to model the underlying, lower-dimensional structure
-in high-dimensional data. [This can be useful](TODO) when trying to understand data,
-and it's also possibly to apply generative modeling techniques on a wider
-variety of datasets than discriminative models (since training generative
-models only requires the data, not any associated labels).
+more complicated. The purpose of generative models isn't necessarily to predict
+a particular outcome, but instead to model the underlying, lower-dimensional
+structure in high-dimensional data. This can be useful in
+[a](https://papers.nips.cc/paper/2014/file/d523773c6b194f37b938d340d5d02232-Paper.pdf)
+[variety](https://papers.nips.cc/paper/2018/file/b8a03c5c15fcfa8dae0b03351eb1742f-Paper.pdf)
+[of](https://arxiv.org/pdf/1807.10300.pdf)
+[applications](https://www.nature.com/articles/s41467-018-07931-2), and it's
+also possible to train generative models in a wider variety of contexts than
+discriminative models (since they only require the data, not any additional
+labels or side-information).
 
 However, there is a relative dearth of research on trying to measure how well
 human users can understand generative models, or even how to visualize them.
-And most of the research [which](TODO) [does](TODO) [exist](TODO) focuses on
-methods that project representations down to two or three dimensions, which is
-often a bit too low.
+Also, what [methods](https://projector.tensorflow.org/)
+[there](https://dl.acm.org/doi/abs/10.1145/3377325.3377514)
+[are](https://arxiv.org/abs/1811.12199) tend to project representations down to
+two or three dimensions. Low-dimensional projection can help us (test whether
+users) understand the global geometry of the data, but it doesn't provide
+insight into (whether users understand) the full representation—in terms of
+its original dimensions.
 
 In this paper, we present a method for simultaneously visualizing and
 evaluating the interpretability of generative model representations. This
@@ -71,7 +81,9 @@ started with a list of models and tasks, visit `localhost:5000/manifest.html`.
 
 After cloning the repository and installing [Python
 dependencies](./requirements.txt), the following commands should let you
-retrain all the models (except InfoGAN on MNIST; see [here](https://github.com/dtak/tensorpack/commit/929f1c819fb1943a72436d9958b2f19d96c5e6a5) for instructions):
+retrain all the models (except InfoGAN on MNIST; see
+[here](https://github.com/dtak/tensorpack/commit/929f1c819fb1943a72436d9958b2f19d96c5e6a5)
+for instructions):
 
 ```bash
 # Retrain dSprites
@@ -88,12 +100,12 @@ python src/train_sinelines.py --output_dir=$dir/vae --variational=1
 # Retrain MNIST
 dir=./quiz/public/models/mnist
 python src/train_mnist.py --output_dir=$dir/ae5  --K=5  --variational=0
-python src/train_mnist.py --output_dir=$dir/vae5 --K=5  --variational=1 --kl_penalty=1
-python src/train_mnist.py --output_dir=$dir/tc5  --K=5  --variational=1 --kl_penalty=1 --tc_penalty=9
-python src/train_mnist.py --output_dir=$dir/ss5  --K=5  --variational=1 --kl_penalty=1 --tc_penalty=9 --semi_supervised=1
+python src/train_mnist.py --output_dir=$dir/vae5 --K=5  --variational=1
+python src/train_mnist.py --output_dir=$dir/tc5  --K=5  --variational=1 --tc_penalty=9
+python src/train_mnist.py --output_dir=$dir/ss5  --K=5  --variational=1 --tc_penalty=9 --semi_supervised=1
 python src/train_mnist.py --output_dir=$dir/ae10 --K=10 --variational=0
-python src/train_mnist.py --output_dir=$dir/tc10 --K=10 --variational=1 --kl_penalty=1 --tc_penalty=9
-python src/train_mnist.py --output_dir=$dir/ss10 --K=10 --variational=1 --kl_penalty=1 --tc_penalty=9 --semi_supervised=1
+python src/train_mnist.py --output_dir=$dir/tc10 --K=10 --variational=1 --tc_penalty=9
+python src/train_mnist.py --output_dir=$dir/ss10 --K=10 --variational=1 --tc_penalty=9 --semi_supervised=1
 ```
 
 Note that the code has been lightly refactored since the original study for
@@ -102,8 +114,9 @@ behave identically.
 
 Note also that you may face TensorFlow.js conversion compatibility
 issues if using versions other than those listed in the [requirements
-file](./requirements.txt), as non-backwards-compatible changes have been made
-to this process since this project's inception.
+file](https://github.com/dtak/interactive-reconstruction/blob/master/requirements.txt#L5-L6),
+as non-backwards-compatible changes have been made to this process since this
+project's inception.
 
 ## Citation
 
