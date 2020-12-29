@@ -1,0 +1,81 @@
+<script>
+  import {randomId} from './utils';
+
+  export default {
+    data() {
+      return {
+        value: 0,
+        target: 0.9
+      }
+    },
+
+    computed: {
+      uniqueId: ({ target }) => {
+        return `bar_${randomId()}`;
+      },
+      bg: ({ value }) => {
+        const p = Math.round(255 * value);
+        return `rgb(${255-p}, ${p}, 10)`;
+      },
+      threshStyle: ({ target }) => {
+        const p = 100 * target;
+        return `left: ${p}%;`;
+      }
+    },
+
+    oncreate() {
+      const { value, uniqueId } = this.get();
+      const barStyle = this.refs.extraStyles;
+      if (barStyle) {
+        const p = 255 * value;
+        const s = `#${uniqueId} .progress::-webkit-progress-value,
+                   #${uniqueId} .progress::-moz-progress-bar {
+                       background-color: rgb(${255-p}, ${p}, 10);
+                   }`;
+        barStyle.innerHTML = s;
+      }
+    },
+
+    onstate({ changed, current, previous }) {
+      if (changed.value) {
+        const barStyle = this.refs.extraStyles;
+        const uniqueId = current.uniqueId;
+        if (barStyle) {
+          const p = Math.round(255 * current.value);
+          const s = `#${uniqueId} .progress::-webkit-progress-value,
+                     #${uniqueId} .progress::-moz-progress-bar {
+                         background-color: rgb(${255-p}, ${p}, 10);
+                     }`;
+          barStyle.innerHTML = s;
+        }
+      }
+    },
+  }
+</script>
+
+<style>
+  .progress-wrapper {
+    width: 195px;
+    position: relative;
+  }
+  .threshold-mark {
+    position: absolute;
+    height: 100%;
+    border-left: 2px dotted #000;
+  }
+</style>
+
+<div class='progress-bar' id='{uniqueId}'>
+  <style ref:extraStyles></style>
+  <div class='progress-wrapper'>
+    <div ref:threshMark class='threshold-mark' style='{threshStyle}'></div>
+    <progress class='progress' value={value} max='1'></progress>
+  </div>
+  <small>Current alignment: {Math.round(value * 1000)/10}%</small>
+  <br>
+  <small>Target alignment: {Math.round(target * 1000)/10}%</small>
+  {#if value >= target-0.001}
+    ✅
+  {/if}
+</div>
+

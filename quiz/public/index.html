@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf8'>
+    <meta name='viewport' content='width=device-width'>
+    <title></title>
+    <link rel='stylesheet' href='button.css'>
+    <link rel='stylesheet' href='nouislider.min.css'>
+    <link rel='stylesheet' href='global.css'>
+    <link rel='stylesheet' href='quiz.css'>
+  </head>
+
+  <script>
+    function GetIEVersion() {
+      var sAgent = window.navigator.userAgent;
+      var Idx = sAgent.indexOf("MSIE");
+      if (Idx > 0)
+        return parseInt(sAgent.substring(Idx+ 5, sAgent.indexOf(".", Idx)));
+      else if (!!navigator.userAgent.match(/Trident\/7\./))
+        return 11;
+      else
+        return 0;
+    }
+
+    var ie_version = GetIEVersion();
+    if (ie_version && ie_version <= 11) {
+      var s = "NOTE: you appear to be using an old version of Internet Explorer. ";
+      s += "This survey will not work in Internet Explorer 11 or earlier. If you would still like to attempt this task, please try again with a modern browser.";
+      alert(s);
+    }
+  </script>
+
+  <body>
+    <div id="app">
+      Loading... <div class='loader'></div>
+    </div>
+    <script src='quiz.js'></script>
+  </body>
+</html>

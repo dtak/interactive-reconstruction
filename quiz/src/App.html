@@ -1,0 +1,315 @@
+<script>
+  import QuizQuestions from './QuizQuestions.html';
+  import {submitToTurk, logEvent, getQuery, range} from './utils';
+
+  export default {
+    data() {
+      const res = {
+        consented: false,
+        instructed: false,
+        demographed: false,
+        embedded: false,
+        modelIdx: -1,
+        viz: 'sliders',
+        models: [],
+        started: false,
+        loading: true,
+        comments: '',
+        answeredFinalQuestions: false,
+        finishedSEQ: false,
+        postModel: false,
+        currentDifficulty: null,
+        difficultyOptions: range(1,8),
+        difficulties: {},
+        likertValues: [null],
+        likertQuestions: ["Overall, this quiz was frustrating"],
+
+        qualitative: getQuery('qualitative'),
+        qualitativeLikertValues: [null, null, null],
+        qualitativeLikertQuestions: [
+          "I had a systematic plan to reconstruct the images",
+          "I spent most of my time randomly experimenting",
+          "I understood what many of the dimensions meant",
+        ],
+        qualitativeTLX: {},
+      };
+      if (Math.random() < 0.5) {
+        res.enjoymentOptions = [1,2,3,4,5];
+      } else {
+        res.enjoymentOptions = [5,4,3,2,1];
+      }
+      if (getQuery('skip_instructions') == '1') {
+        res.consented = true;
+        res.instructed = true;
+        res.modelIdx = 0;
+      }
+      if (getQuery('dataset') == 'mnist') {
+        res.likertQuestions = [];
+        res.likertValues = [];
+      }
+      return res;
+    },
+
+    components: {
+      Consent: './Consent.html',
+      Demographics: './Demographics.html',
+      Instructions: './Instructions.html',
+      LikertScale: './LikertScale.html',
+      NASATLX: './NASATLX.html'
+    },
+
+    computed: {
+      likertCompleted: ({ likertValues }) => {
+        return !likertValues.includes(null);
+      },
+
+      anyLikertQuestions: ({ likertQuestions }) => {
+        return likertQuestions.length > 0;
+      },
+
+      numQuestions: ({ viz }) => {
+        if (getQuery('num_questions')) {
+          return parseInt(getQuery('num_questions'));
+        } else if (getQuery('dataset') == 'mnist') {
+          return 7;
+        } else if (viz == 'sliders') {
+          return 5;
+        } else {
+          return 10;
+        }
+      },
+
+      modelKey: ({ modelKeys, modelIdx }) => {
+        return modelKeys[modelIdx];
+      },
+
+      numModels: ({ modelPromises }) => {
+        return modelPromises.length;
+      }
+    },
+
+    onupdate({changed, current, _previous}) {
+      if (changed.modelIdx) {
+        if (current.modelIdx >= 0 && current.modelIdx < current.numModels) {
+          const viz = current.viz;
+          const numQuestions = current.numQuestions;
+          const modelIdx = current.modelIdx;
+          const modelProm = current.modelPromises[modelIdx];
+          const numModels = current.modelPromises.length;
+          const that = this;
+          that.set({ loading: true });
+
+          modelProm.then((model) => {
+            that.set({ loading: false });
+
+            if (getQuery('dataset') !== 'mnist') {
+              const { likertQuestions, likertValues } = that.get();
+              likertQuestions.push(`Stage ${modelIdx+1} was easy`);
+              likertValues.push(null);
+              that.set({ likertQuestions, likertValues });
+            }
+
+            const { modelKey, dataKey } = model.get();
+            const questions = new QuizQuestions({
+              target: that.refs.questions,
+              store: model,
+              data: { viz, numQuestions, modelIdx, numModels }
+            });
+            questions.on('log', (event) => {
+              const context = { modelIdx, modelKey, dataKey, viz };
+              logEvent(event, context);
+            });
+            questions.on('update', ({ _, current, __ }) => {
+              if (current.questionIdx >= numQuestions) {
+                questions.destroy();
+                that.set({ postModel: true, finishedSEQ: false });
+              }
+            });
+          });
+        }
+      }
+    },
+
+    methods: {
+      startQuiz() {
+        this.set({ modelIdx: 0, instructed: true });
+      },
+
+      submitSEQ() {
+        const { currentDifficulty, difficulties, modelIdx, modelKey, dataKey,
+          viz, numModels } = this.get();
+        const context = { dataKey, viz, modelKey, modelIdx };
+        const event = {
+          name: 'seq-completion',
+          data: { difficulty: currentDifficulty }
+        }
+        logEvent(event, context);
+
+        const { qualitative, qualitativeTLX, qualitativeLikertQuestions,
+          qualitativeLikertValues } = this.get();
+
+        if (qualitative) {
+          logEvent({
+            name: 'qualitative-questions',
+            data: { qualitativeTLX, qualitativeLikertQuestions, qualitativeLikertValues }
+          }, context);
+
+          this.set({
+            qualitativeTLX: {},
+            qualitativeLikertValues: qualitativeLikertValues.map((el) => null),
+          });
+        }
+
+        if (modelIdx < numModels-1) {
+          this.set({ finishedSEQ: true });
+        } else {
+          this.set({ modelIdx: modelIdx + 1, postModel: false });
+        }
+        difficulties[modelKey] = currentDifficulty;
+        this.set({ difficulties, currentDifficulty: null });
+      },
+
+      nextStage() {
+        const { modelIdx } = this.get();
+        this.set({ modelIdx: modelIdx + 1, postModel: false });
+      },
+
+      endQuiz() {
+        const { comments, modelPromises, viz, dataKey, modelKeys, likertValues, likertQuestions, difficulties } = this.get();
+        const context = { dataKey, viz, modelKey: null, modelIdx: -1 };
+        const event = {
+          name: 'quiz-completion',
+          data: { likertQuestions, likertValues, comments, difficulties }
+        };
+        logEvent(event, context);
+        this.set({ answeredFinalQuestions: true });
+      },
+
+      returnToTurk() {
+        const { compcode } = this.get();
+        submitToTurk({ code: compcode });
+      }
+    }
+  }
+</script>
+
+<style>
+.question-body {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+textarea {
+  max-width: 100%;
+  min-height: 4rem;
+  width: 100%;
+  margin-bottom: 18px;
+  font-size: 18px;
+}
+.radirow.centered {
+  text-align: center;
+}
+.radirow.centered input,
+.radirow.centered label {
+  margin: 1rem;
+}
+</style>
+
+{#if modelIdx >= numModels}
+  {#if answeredFinalQuestions && demographed}
+    <h1>Quiz Completed!</h1>
+    <p>Thanks so much for completing the quiz!</p>
+
+    {#if embedded}
+      <p>Your completion code is <code>{compcode}</code>. It should be submitted automatically when you click the button below, but you can copy it just in case :)</p>
+
+      <button on:click="returnToTurk()">Return to MTurk</button>
+    {:else}
+      <p>Your quiz completion code is <code>{compcode}</code>. Please copy and paste this back into MTurk, then feel free to close this window :)</p>
+    {/if}
+  {:elseif answeredFinalQuestions}
+    <h1>Final Demographic Questions</h1>
+    <p>As a final step, please provide the following demographic information. It will be kept private and only considered in aggregate.</p>
+    <Demographics viz={viz} on:complete="set({ demographed: true })"/>
+  {:else}
+    <h1>Quiz Completed!</h1>
+    {#if anyLikertQuestions}
+      <p>
+        Thanks for completing the quiz!
+        Here are some questions about what you just did, and then we will direct you back to MTurk.
+      </p>
+
+      <div class='question-body'>
+        <LikertScale bind:values=likertValues questions={likertQuestions} />
+      </div>
+    {/if}
+
+    {#if likertCompleted}
+      <p>Any other comments? Anything that made sense, was confusing, or that you found annoying?</p>
+
+      <div class='question-body'>
+        <textarea bind:value=comments></textarea>
+      </div>
+
+      <button on:click="endQuiz()">Complete quiz</button>
+    {/if}
+  {/if}
+{:elseif consented && instructed}
+  {#if postModel}
+    {#if numModels == 1}
+      <h1>Quiz Completed!</h1>
+    {:elseif numModels == 2}
+      <h1>First Stage Completed!</h1>
+    {:else}
+      <h1>Stage {modelIdx+1} out of {numModels} Completed</h1>
+    {/if}
+
+    {#if finishedSEQ}
+      <p>In the next stage, you're going to answer a similar set of questions, except that <strong>the relationship between the dials and the pictures is going to be different.</strong> This might make the questions easier or harder.</p>
+      <p>When you're ready, click the button below to proceed.</p>
+      <button on:click="nextStage()">Proceed</button>
+    {:else}
+      <p>
+        {#if numModels == 1}
+          Awesome, you finished the quiz!
+        {:else}
+          Awesome, you finished the stage!
+        {/if}
+
+        Overall, would you say this task was:
+      </p>
+
+      <div class='radirow centered'>
+        <label on:click="set({ currentDifficulty: 1 })">
+          Very easy
+        </label>
+        {#each difficultyOptions as i}
+          <input type='radio' class='radirow-button' bind:group=currentDifficulty value={i} />
+        {/each}
+        <label on:click="set({ currentDifficulty: 7 })">
+          Very difficult
+        </label>
+      </div>
+
+      {#if qualitative}
+        <p>Please answer the following additional questions:</p>
+        <LikertScale bind:values=qualitativeLikertValues questions={qualitativeLikertQuestions} />
+        <br>
+        <NASATLX bind:values=qualitativeTLX />
+      {/if}
+
+      <br>
+      <button on:click="submitSEQ()" disabled="{currentDifficulty === null}">Proceed</button>
+    {/if}
+  {:elseif loading}
+    Loading... <div class='loader'></div>
+   {/if}
+{:elseif consented}
+  <h1>Instructions</h1>
+  <Instructions viz={viz} dataKey={dataKey} numModels={numModels} numQuestions={numQuestions} on:complete="startQuiz()" />
+{:else}
+  <Consent/>
+  <button on:click="set({ consented: true })">Proceed</button>
+{/if}
+<div ref:questions id='inner-app'>
+</div>

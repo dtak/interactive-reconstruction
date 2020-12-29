@@ -1,0 +1,6 @@
+{
+    "informativeness_train": 0.8875669180350612,
+    "informativeness_test": 0.7376373370484057,
+    "disentanglement": 0.20510861137900746,
+    "completeness": 0.20841769172816907
+}

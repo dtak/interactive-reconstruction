@@ -1,0 +1,166 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset='utf8'>
+    <meta name='viewport' content='width=device-width'>
+    <title></title>
+    <link rel='stylesheet' target="_blank" href='button.css'>
+    <link rel='stylesheet' target="_blank" href='nouislider.min.css'>
+    <link rel='stylesheet' target="_blank" href='global.css'>
+    <link rel='stylesheet' target="_blank" href='quiz.css'>
+<style>
+h3 {
+  margin-bottom: 5px;
+}
+h2 {
+  margin-top: 2rem;
+}
+h3 a {
+  font-weight: normal;
+}
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+label {
+  cursor: pointer;
+}
+</style>
+  </head>
+  <body>
+    <div id="app">
+      <h1>Task URLs</h1>
+
+      <p>Here we present links for each of our experimental tasks and conditions. These tasks were implemented as single-page JS apps using <a target="_blank" href='https://svelte.dev/'>Svelte</a> and <a target="_blank" href='https://www.tensorflow.org/js/'>TensorFlow.js</a>.</p>
+
+      <p>By default, these links will include the (anonymized) consent form and instructions, but for convenience, you can skip directly to the model questions by selecting a different option:</p>
+      <ul>
+        <li><label><input type='radio' name='skip-instructions' id='keep' checked /> Include consent and instructions</label></li>
+        <li><label><input type='radio' name='skip-instructions' id='skip'/> Skip directly to questions</label></li>
+      </ul>
+
+      <h2>Interactive Reconstruction</h2>
+
+      <h3>dSprites
+      <a target="_blank" href='INDEX?viz=sliders&dataset=dsprites&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=dsprites&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=dsprites&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=dsprites&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+
+      <h3>Sinelines
+      <a target="_blank" href='INDEX?viz=sliders&dataset=sinelines&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=sinelines&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=sinelines&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=sliders&dataset=sinelines&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+
+      <h3>MNIST
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=ae5&permitted=1&anonymized=1' class='button'>
+          <span>AE<sub>5</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=vae5&permitted=1&anonymized=1' class='button'>
+          <span>VAE<sub>5</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=ig5&permitted=1&anonymized=1' class='button'>
+          <span>IG<sub>5</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=tc5&permitted=1&anonymized=1' class='button'>
+          <span>TC<sub>5</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=ss5&permitted=1&anonymized=1' class='button'>
+          <span>SS<sub>5</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=ae10&permitted=1&anonymized=1' class='button'>
+          <span>AE<sub>10</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=tc10&permitted=1&anonymized=1' class='button'>
+          <span>TC<sub>10</sub></span></a>
+
+        <a target="_blank" href='INDEX?viz=sliders&dataset=mnist&models=ss10&permitted=1&anonymized=1' class='button'>
+          <span>SS<sub>10</sub></span></a>
+      </h3>
+
+
+      <h2>Single-Dimension (Exemplars)</h2>
+
+      <h3>dSprites
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=dsprites&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=dsprites&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=dsprites&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=dsprites&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+
+      <h3>Sinelines
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=sinelines&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=sinelines&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=sinelines&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=exemplars&dataset=sinelines&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+
+      <h2>Single-Dimension (Traversals)</h2>
+
+      <h3>dSprites
+      <a target="_blank" href='INDEX?viz=traversals&dataset=dsprites&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=dsprites&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=dsprites&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=dsprites&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+
+      <h3>Sinelines
+      <a target="_blank" href='INDEX?viz=traversals&dataset=sinelines&permitted=1&anonymized=1' class='button'>
+        All Models</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=sinelines&permitted=1&anonymized=1&models=ae' class='button'>
+        AE</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=sinelines&permitted=1&anonymized=1&models=vae' class='button'>
+        VAE</a>
+      <a target="_blank" href='INDEX?viz=traversals&dataset=sinelines&permitted=1&anonymized=1&models=gt' class='button'>
+        GT</a>
+      </h3>
+    </div>
+  </body>
+
+  <script type='text/javascript'>
+    function replaceLinks(s1, s2) {
+      for (let a of document.getElementsByTagName('a')) {
+        a.setAttribute('href', a.getAttribute('href').replace(s1, s2));
+      }
+    }
+
+    replaceLinks('INDEX', location.href.replace("manifest.html", "index.html"));
+
+    document.body.addEventListener('change', function (e) {
+      let target = e.target;
+      switch (target.id) {
+        case 'keep':
+          replaceLinks('skip_instructions', 'permitted');
+          break;
+        case 'skip':
+          replaceLinks('permitted', 'skip_instructions');
+          break;
+      }
+    });
+  </script>
+</html>
+

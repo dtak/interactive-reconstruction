@@ -1,0 +1,223 @@
+<script>
+  import {range, sampleOne, shuffle} from './utils';
+
+  export default {
+    data() {
+      return {
+        input: [],
+        questionIdx: 0,
+        size: 54,
+        selection: null,
+        likertValues: [null, null],
+        likertQuestions: ["I'm confident I'm right", "The dial makes sense"],
+        provideFeedback: true,
+        doubleUpDimensions: true,
+        startedAt: new Date().getTime()
+      }
+    },
+
+    computed: {
+      dimOrder: ({ $flatDims }) => {
+        return shuffle(range($flatDims.length));
+      },
+
+      likertCompleted: ({ likertValues }) => {
+        return !likertValues.includes(null);
+      },
+
+      confidence: ({ likertValues }) => {
+        return likertValues[0];
+      },
+
+      output: ({ input, $decode }) => {
+        return $decode(input);
+      },
+
+      dimIndex: ({ questionIdx, $flatDims, doubleUpDimensions }) => {
+        if (doubleUpDimensions) {
+         return Math.floor(questionIdx / 2) % $flatDims.length;
+        } else {
+         return questionIdx % $flatDims.length;
+        }
+      },
+
+      dim: ({ dimOrder, dimIndex, $flatDims }) => {
+        const dim = $flatDims[dimOrder[dimIndex]];
+        dim.name = `Dial ${dimIndex+1}`; // hack, forgive me
+        return dim;
+      },
+
+      dimensionName: ({ dim }) => {
+        return dim.name;
+      },
+
+      selectionOptions: ({ dim }) => {
+        if (dim.type == 'continuous') {
+          return ['Low', 'Medium', 'High'];
+        } else {
+          return dim.options.map((d) => d.name);
+        }
+      },
+
+      optionsAsSentence: ({ selectionOptions }) => {
+        const opts = selectionOptions.map((o) => `<code>${o}</code>`);
+        if (opts.length == 2) {
+          return `${opts[0]} or ${opts[1]}`;
+        } else {
+          const last = opts.slice(-1)[0];
+          return opts.slice(0,-1).join(", ") + ", or " + last;
+        }
+      },
+
+      trueOptionIndex: ({ questionIdx, selectionOptions }) => {
+        return sampleOne(range(selectionOptions.length));
+      },
+
+      cmz: ({ trueOptionIndex, dim, $sampleLatentComponents, $mergeCMZ, $getLoMedHi }) => {
+        let cmz;
+        let targetContValue = () => {
+          return $getLoMedHi(dim)[trueOptionIndex];
+        }
+
+        while (true) {
+          const { cs, z } = $sampleLatentComponents();
+          let target;
+          if (dim.type == 'continuous') {
+            target = targetContValue();
+            z[dim.contIndex] = target;
+          } else {
+            for (let l = 0; l < dim.options.length; l++)
+              cs[dim.discIndex][l] = 1 * (l == trueOptionIndex);
+          }
+          cmz = $mergeCMZ(cs, z);
+          if (
+            (dim.type == 'continuous' && cmz[dim.index] == target) ||
+            (dim.type == 'discrete' && cmz[dim.index+trueOptionIndex] == 1)
+          ) break;
+        }
+        return cmz;
+      },
+
+      x: ({ cmz, $decode }) => {
+        return $decode(cmz);
+      }
+    },
+
+    methods: {
+      confirmSelection() {
+        const { cmz, dim, selection, confidence, trueOptionIndex, viz, questionIdx, startedAt, provideFeedback, selectionOptions, likertValues, likertQuestions } = this.get();
+        this.root.fire('log', {
+          name: 'instance-quiz-confirm-selection',
+          data: {
+            predValue: selection,
+            trueValue: trueOptionIndex,
+            dimId: dim.id,
+            cmz,
+            confidence,
+            startedAt,
+            likertValues,
+            likertQuestions,
+            provideFeedback
+          }
+        });
+        if (provideFeedback) {
+          if (selection == trueOptionIndex) {
+            alert("Your answer was correct!");
+          } else {
+            alert(`Your answer, ${selectionOptions[selection]}, was incorrect! The correct answer was ${selectionOptions[trueOptionIndex]}.`);
+          }
+        }
+        this.set({
+          questionIdx: questionIdx + 1,
+          likertValues: [null, null],
+          selection: null,
+          startedAt: new Date().getTime()
+        });
+      }
+    },
+
+		components: {
+      TraversalList: './TraversalList.html',
+      ExemplarList: './ExemplarList.html',
+      Instance: './InstanceViz.html',
+      LikertScale: './LikertScale.html'
+		}
+  }
+</script>
+
+<style>
+.question-body {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.question-body-instance {
+  float: left;
+  margin-right: 1em;
+}
+.question-body-options {
+  float: right;
+}
+.quiz-section p:first-child {
+	margin-top: 0;
+}
+
+.block-wrapper {
+  display: flex;
+}
+
+.explain-block {
+  margin-right: 1rem;
+  max-width: 50%;
+}
+</style>
+
+<div class='block-wrapper clearfix'>
+
+<div class='quiz-section explain-block'>
+  <div class='question-body'>
+    {#if viz == 'traversals'}
+      <TraversalList bind:dim=dim />
+    {:else}
+      <ExemplarList bind:dim=dim />
+    {/if}
+  </div>
+</div>
+
+<div class='quiz-section question-block'>
+  <p>Which of the following best describes the value of <code>{dimensionName}</code> for the example below?</p>
+
+  <div class='question-body'>
+    <div class='clearfix'>
+      <div class='question-body-instance'>
+        <Instance x={x} size={size} />
+      </div>
+      <div class='question-body-options'>
+        {#each selectionOptions as option, i}
+          <div>
+            <label>
+              <input
+                type='radio'
+                name='selection'
+                value={i}
+                checked={selection==i}
+                on:change="set({ selection: i })"/>
+              <code>{option}</code>
+            </label>
+          </div>
+        {/each}
+      </div>
+    </div>
+  </div>
+
+  <p>How do you feel about your answer?</p>
+
+  <div class='question-body'>
+    <LikertScale bind:values=likertValues questions={likertQuestions}/>
+  </div>
+
+  <br/>
+  <button on:click=confirmSelection() class='button' disabled={!(likertCompleted && selection !== null)}>Continue</button>
+</div>
+
+</div>

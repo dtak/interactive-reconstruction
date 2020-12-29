@@ -1,0 +1,99 @@
+<script>
+  import {range} from './utils';
+
+  export default {
+    data() {
+      return {
+        numTraversals: 5,
+        resetIdx: 0,
+        numContSteps: 7
+      }
+    },
+
+    methods: {
+      randomizeExamples() {
+        const { resetIdx, dim } = this.get();
+        this.set({ resetIdx: resetIdx + 1 });
+      }
+    },
+
+    components: {
+      ContinuousTraversal: './ContinuousTraversal.html',
+      DiscreteTraversal: './DiscreteTraversal.html'
+    },
+
+    computed: {
+      traversalInputs: ({ numTraversals, resetIdx, $sampleLatentComponents }) => {
+        return range(numTraversals).map((_) => {
+          return $sampleLatentComponents();
+        });
+      }
+    }
+  }
+</script>
+
+<style>
+table {
+  position: relative;
+  padding-left: 1em;
+  border-collapse: none;
+  margin-bottom: 1rem;
+}
+table > caption {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: rotate(270deg) translateY(-150%) translateX(50%);
+}
+button {
+  margin-bottom: 1rem;
+}
+</style>
+
+{#if dim.type == 'continuous'}
+  <table class='cont-dim-traversal-block'>
+    <caption>Examples</caption>
+    <tbody>
+      {#each traversalInputs as input, i}
+      <tr><td><ContinuousTraversal cs={input.cs} z={input.z} dim={dim} numContSteps={numContSteps} /></td></tr>
+      {/each}
+      <tr>
+        <td>
+          <label style='float: right'><code>High</code> →</label>
+          <label><code>Medium</code></label>
+          <label style='float: left'>← <code>Low</code></label>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Value of <code>{dim.name}</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <!--<button on:click=set({numContSteps:numContSteps+1})>More steps</button>-->
+  <!--<button on:click=set({numContSteps:numContSteps-1})>Fewer steps</button>-->
+{:else}
+  <table class='disc-dim-traversal-block'>
+    <caption>Examples</caption>
+    <tbody>
+      {#each traversalInputs as input, i}
+        <DiscreteTraversal cs={input.cs} z={input.z} dim={dim} />
+      {/each}
+      <tr>
+        {#each dim.options as opt}
+          <td>
+            <code>{opt.name}</code>
+          </td>
+        {/each}
+      </tr>
+      <tr>
+        <td colspan='100'>
+          Value of <code>{dim.name}</code>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+{/if}
+
+<button on:click="randomizeExamples()">Show More Examples</button>

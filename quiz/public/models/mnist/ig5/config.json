@@ -1,0 +1,61 @@
+{
+    "Dx": 784,
+    "Dc": [
+        10
+    ],
+    "Dz": 5,
+    "z_lims": [
+        [
+            -1,
+            1
+        ],
+        [
+            -1,
+            1
+        ],
+        [
+            -1,
+            1
+        ],
+        [
+            -1,
+            1
+        ],
+        [
+            -1,
+            1
+        ]
+    ],
+    "vars": [
+        {
+            "type": "categorical",
+            "options": [
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                [],
+                []
+            ]
+        },
+        {
+            "type": "continuous"
+        },
+        {
+            "type": "continuous"
+        },
+        {
+            "type": "continuous"
+        },
+        {
+            "type": "continuous"
+        },
+        {
+            "type": "continuous"
+        }
+    ]
+}

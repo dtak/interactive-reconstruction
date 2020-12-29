@@ -1,0 +1,130 @@
+<script>
+  import {logEvent} from './utils';
+
+  export default {
+    data() {
+      return {
+        age: null,
+        ageOptions: [
+          'Below 18', '18-34',
+          '35-50', '51-69',
+          '70 and above'
+        ],
+        gender: [],
+        genderOptions: [
+          'woman', 'man', 'non-binary', 'prefer not to disclose'
+        ],
+        selfDescribedGender: null,
+        education: null,
+        educationOptions: [
+          'High School',
+          "Bachelor's",
+          "Master's and beyond"
+        ],
+        location: null,
+        locationOptions: [
+          'North America',
+          'Central America',
+          'South America',
+          'Middle East',
+          'Europe',
+          'Asia',
+          'Africa',
+          'Australia',
+          'Other'
+        ],
+      }
+    },
+
+    methods: {
+      complete() {
+        const { age, gender, location, education, viz, selfDescribedGender } = this.get();
+        logEvent({
+          name: 'completed-demographics',
+          data: { age, gender, location, education, selfDescribedGender }
+        }, {
+          modelIdx: -1,
+          modelKey: 'demographics',
+          dataKey: 'demographics',
+          viz: viz
+        });
+        this.fire('complete', {});
+      }
+    },
+
+    computed: {
+      ready: ({ age, gender, location, education }) => {
+        return age && gender && location && education;
+      }
+    }
+  }
+</script>
+
+<style>
+.centered {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+label {
+  display: block;
+  cursor: pointer;
+  margin-left: 1rem;
+}
+fieldset {
+  border: none;
+  padding: 0;
+  margin-bottom: 1rem;
+}
+</style>
+
+<fieldset>
+  <legend>Age</legend>
+  {#each ageOptions as option}
+    <label>
+      <input type='radio' bind:group=age value={option}>
+      {option}
+    </label>
+  {/each}
+</fieldset>
+
+<fieldset>
+  <legend>Gender</legend>
+  {#each genderOptions as option}
+    <label>
+      <input type='checkbox' bind:group='gender' value={option}>
+      {option}
+    </label>
+  {/each}
+  <label>
+    <input type='checkbox' bind:group=gender value='self-describe'>
+    prefer to self-describe:&nbsp;
+    <input type='text' bind:value=selfDescribedGender>
+  </label>
+</fieldset>
+
+<fieldset>
+  <legend>Highest Level of Education</legend>
+  {#each educationOptions as option}
+    <label>
+      <input type='radio' bind:group=education value={option}>
+      {option}
+    </label>
+  {/each}
+</fieldset>
+
+<fieldset>
+  <legend>Geographic Location</legend>
+  {#each locationOptions as option}
+    <label>
+      <input type='radio' bind:group=location value={option}>
+      {option}
+    </label>
+  {/each}
+</fieldset>
+
+{#if ready}
+  <button on:click="complete()">Proceed</button>
+{:else}
+  <button disabled>Proceed</button>
+{/if}

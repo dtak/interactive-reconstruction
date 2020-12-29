@@ -1,0 +1,62 @@
+<script>
+  export default {
+    data() {
+      return {
+        editing: false,
+        oldValue: null,
+        fieldId: null
+      }
+    },
+
+    methods: {
+      startEditing() {
+        const { value } = this.get();
+        this.set({ oldValue: value });
+        if (this.refs.input)
+          this.refs.input.select();
+      },
+
+      stopEditing() {
+        const { oldValue, value, fieldId } = this.get();
+        if (value != oldValue) {
+          this.root.fire('log', {
+            name: `editable`,
+            data: { fieldId, oldValue, value }
+          });
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  button {
+    padding: 0;
+  }
+
+  input {
+    padding: 3px;
+    font-family: monospace;
+    font-size: 13.5px;
+  }
+
+  .editable {
+    display: inline-block;
+  }
+  
+  .editable-text {
+    border-radius: 3px;
+    padding: 3px;
+    border: 1px solid #eee;
+    display: inline-block;
+  }
+
+  .editable-text:hover {
+    cursor: pointer;
+    text-decoration: underline;
+  }
+</style>
+
+<span class='editable'>
+<input ref:input bind:value=value size={Math.max(value.length,9)} on:focus="startEditing()" on:blur="stopEditing()"/>
+</span>

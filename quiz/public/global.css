@@ -1,0 +1,148 @@
+html, body {
+	position: relative;
+	width: 100%;
+}
+
+.warning-message {
+  border-color: #ffdd57;
+  color: #947600;
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+  padding: 1.25em 1.5em;
+  background-color: #fffbeb;
+  border-style: solid;
+  border-width: 0 0 0 4px;
+}
+
+:root {
+  --neg-color: #980000;
+  --pos-color: #38761D;
+  --border-color: lightgray;
+  --gutter: 1rem;
+  --gutter-sm: 4px;
+  --page-width: 60rem;
+}
+
+body {
+  max-width: var(--page-width);
+  font-family: Baskerville, serif;
+  font-size: 22px;
+  margin: 0 auto;
+  background: whitesmoke;
+}
+
+body.has-fixed-footer {
+	padding-bottom: calc(88px + 1em);
+}
+
+#app {
+  padding: var(--gutter);
+  background: white;
+  outline: 1px solid #ccc;
+}
+
+h1, h2, h3, h4, h5 {
+  margin: 0;
+}
+
+input, select, button {
+  margin-bottom: 0;
+  vertical-align: text-bottom;
+}
+
+h1, h2, h3 {
+  margin-bottom: var(--gutter);
+}
+
+h4, h5 {
+  margin-bottom: 3px;
+  font-weight: normal;
+}
+
+select {
+  font-size: 0.75em;
+}
+
+.gutter.gutter-horizontal {
+  cursor: ew-resize;
+  background: #eee;
+}
+
+.clearfix::after {
+  content: "";
+  clear: both;
+  display: table;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  pointer-events: all !important;
+}
+
+canvas {
+  display: block;
+}
+
+.radirow label,
+input[type="radio"],
+input[type="radio"] + span,
+input[type="radio"] + code {
+  cursor: pointer;
+}
+
+input[type="radio"], input[type="checkbox"] {
+  vertical-align: baseline;
+}
+
+code {
+  font-size: 16px;
+  color: #d20600;
+  padding: 1px 5px;
+  background: #f8f8f8;
+  border-radius: 5px;
+  margin: 0 2px;
+  white-space: nowrap;
+}
+
+table {
+  text-align: center;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-radius: 50%;
+  border-top: 4px solid #3498db;
+  width: 30px;
+  height: 30px;
+  -webkit-animation: spin 1s linear infinite; /* Safari */
+  animation: spin 1s linear infinite;
+  position: absolute;
+  left: calc(50% - 30px);
+  top: 8px;
+}
+
+/* Safari */
+@-webkit-keyframes spin {
+  0% { -webkit-transform: rotate(0deg); }
+  100% { -webkit-transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.noUi-touch-area:hover {
+  cursor: grab !important;
+}
+
+.noUi-touch-area:active {
+  cursor: grabbing !important;
+}
+
+.disabled .noUi-touch-area,
+.disabled .noUi-touch-area:hover,
+.disabled .noUi-touch-area:active {
+  cursor: not-allowed !important;
+}
+

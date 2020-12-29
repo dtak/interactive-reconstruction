@@ -1,0 +1,94 @@
+<script>
+  export default {
+    data() {
+      const subscales = [
+        ["Mental Demand", "How mentally demanding was the task?"],
+        ["Physical Demand", "How physically demanding was the task?"],
+        ["Temporal Demand", "How hurried or rushed was the pace of the task?"],
+        ["Performance", "How successful were you in accomplishing what you were asked to do?"],
+        ["Effort", "How hard did you have to work to accomplish your level of performance?"],
+        ["Frustration Level", "How insecure, discouraged, irritated, stressed, and annoyed were you?"]
+      ];
+      return {
+        subscales,
+        values: {},
+        leftLabels: ["Very Low", "Very Low", "Very Low", "Perfect", "Very Low", "Very Low"],
+        rightLabels: ["Very High", "Very High", "Very High", "Failure", "Very High", "Very High"]
+      };
+    },
+
+    oncreate() {
+      const { values, subscales } = this.get();
+
+      if (!Object.keys(values || {}).length) {
+        const defaults = {};
+        for (let s of subscales) {
+          defaults[s[0]] = 10;
+        }
+        this.set({ values: defaults });
+      }
+    },
+
+    onstate({ changed, current, previous }) {
+      if (!Object.keys(current.values || {}).length) {
+        const defaults = {};
+        for (let s of current.subscales) {
+          defaults[s[0]] = 10;
+        }
+        this.set({ values: defaults });
+      }
+    },
+
+    components: {
+      Slider: './Slider.html',
+    }
+  };
+</script>
+
+<style>
+p {
+  margin: 0;
+}
+table {
+  margin: 0 auto;
+  max-width: 800px;
+  font-size: 18px;
+}
+.range-tr td {
+  white-space: nowrap;
+  padding-bottom: 1rem;
+}
+.range-td {
+  width: 100%;
+}
+.left-td {
+  text-align: right;
+}
+.right-td {
+  text-align: left;
+}
+:global(.range-td .wrapper) {
+  display: block !important;
+}
+:global(.range-td .latent-slider) {
+  width: 100% !important;
+}
+</style>
+
+<table>
+{#each subscales as [scale,desc],i}
+  <tr>
+    <td colspan='3'>
+      <strong>{scale}</strong>
+      <p>{desc}</p>
+    </td>
+  </tr>
+  <tr class='range-tr'>
+    <td class='left-td'>{leftLabels[i]}</td>
+    <td class='range-td'>
+      <Slider bind:value=values[scale] min={0} max={20} step={1} start={10} fullWidth={true} />
+    </td>
+    <td class='right-td'>{rightLabels[i]}</td>
+  </tr>
+{/each}
+</table>

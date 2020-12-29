@@ -1,0 +1,25 @@
+<script>
+  export default {
+    data() {
+      return {
+        size: 100,
+        showError: 0
+      }
+    },
+
+    components: {
+      GrayscaleImage: './GrayscaleImage.html',
+      LineChart: './LineChart.html'
+    }
+  }
+</script>
+
+{#if $dataKey == "sinelines"}
+  <LineChart size={size} x={x} xmin={0} xmax={64} ymin={-10} ymax={10} showError={showError} />
+{:elseif $dataKey == "dsprites"}
+  <GrayscaleImage size={size} x={x} w={64} h={64} />
+{:elseif $dataKey == "mnist"}
+  <GrayscaleImage size={size} x={x} w={28} h={28} round={true} />
+{:else}
+  <span color="red">UNRECOGNIZED DATASET {$dataKey}</span>
+{/if}

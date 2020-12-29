@@ -1,0 +1,51 @@
+<script>
+  import * as tf from '@tensorflow/tfjs';
+  import {range, copyArray, getQuery} from './utils';
+
+  export default {
+    data() {
+      return {
+        numContSteps: 7,
+        size: 54
+      }
+    },
+
+    components: {
+      Instance: './InstanceViz.html',
+    },
+
+    computed: {
+      contZs: ({ z, cs, dim, $getLoMedHi, numContSteps, $mergeCMZ }) => {
+        const zs = [];
+        const [zmin, zmid, zmax] = $getLoMedHi(dim);
+        const zstep = (zmax - zmin) / (numContSteps - 1);
+        range(numContSteps).forEach((i) => {
+          const z2 = copyArray(z);
+          z2[dim.contIndex] = zmin + zstep * i;
+          zs.push($mergeCMZ(cs, z2));
+        });
+        return zs;
+      },
+
+      contXs: ({ contZs, $decodes }) => {
+        return $decodes(contZs);
+      }
+    }
+  }
+</script>
+
+<style>
+  .traversal {
+    white-space: nowrap;
+  }
+  :global(.traversal .canvas-wrapper) {
+    display: inline-block;
+    margin-right: 1px;
+  }
+</style>
+
+<div class='traversal'>
+  {#each contXs as xprime}
+    <Instance x={xprime} size={size} />
+  {/each}
+</div>

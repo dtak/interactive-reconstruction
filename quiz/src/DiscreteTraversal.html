@@ -1,0 +1,51 @@
+<script>
+  import * as tf from '@tensorflow/tfjs';
+  import {range, copyArray} from './utils';
+
+  export default {
+    data() {
+      return {
+        size: 60
+      }
+    },
+
+    components: {
+      Instance: './InstanceViz.html',
+    },
+
+    computed: {
+      discZs: ({ z, cs, dim, $mergeCMZ }) => {
+        const zs = [];
+        const i = dim.discIndex;
+        range(dim.options.length).forEach((j) => {
+          const cs2 = copyArray(cs);
+          for (let l = 0; l < cs2[i].length; l++) cs2[i][l] = (l == j);
+          zs.push($mergeCMZ(cs2, z));
+        });
+        return zs;
+      },
+
+      discXs: ({ discZs, $decodes }) => {
+        return $decodes(discZs);
+      }
+    }
+  }
+</script>
+
+<style>
+  .traversal {
+    white-space: nowrap;
+  }
+  :global(.traversal .canvas-wrapper) {
+    display: inline-block;
+    margin-right: 1px;
+  }
+</style>
+
+<tr class='traversal'>
+  {#each discXs as xprime, j}
+    <td>
+      <Instance x={xprime} size={size} />
+    </td>
+  {/each}
+</tr>

@@ -1,0 +1,96 @@
+
+<script>
+  import {range} from './utils';
+
+  export default {
+    data() {
+      return {
+        numExamples: 8,
+        resetIdx: 0,
+        size: 54
+      }
+    },
+
+    components: {
+      Instance: './InstanceViz.html',
+    },
+
+    methods: {
+      randomizeExamples() {
+        const { resetIdx, dim } = this.get();
+        this.set({ resetIdx: resetIdx + 1 });
+      }
+    },
+
+    computed: {
+      zGroups: ({ dim, numExamples, resetIdx, $sampleLatentComponents, $mergeCMZ, $getLoMedHi }) => {
+        if (dim.type == 'continuous') {
+          return [0,1,2].map((i) => {
+            return range(numExamples).map((_) => {
+              const { cs, z } = $sampleLatentComponents();
+              z[dim.contIndex] = $getLoMedHi(dim)[i];
+              return $mergeCMZ(cs, z);
+            });
+          });
+        } else {
+          const i = dim.discIndex;
+          return dim.options.map((opt, j) => {
+            return range(numExamples).map((_) => {
+              const { cs, z } = $sampleLatentComponents();
+              for (let k = 0; k < cs[i].length; k++)
+                cs[i][k] = (k == j);
+              return $mergeCMZ(cs, z);
+            });
+          });
+        }
+      },
+
+      xGroups: ({ zGroups, $decodes }) => {
+        return zGroups.map((row) => $decodes(row));
+      },
+
+      groupLabels: ({ dim }) => {
+        if (dim.type == 'continuous') {
+          return ['Low', 'Medium', 'High'];
+        } else {
+          return dim.options.map((d) => d.name);
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  table {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  :global(.exemplar-inputs .canvas-wrapper) {
+    display: inline-block;
+    margin-right: 1px;
+  }
+
+  button {
+    margin-bottom: 1rem;
+  }
+</style>
+
+<table>
+  <tr>
+  {#each xGroups as group, i}
+    <td>Bin where <code>{dim.name}</code> is <code>{groupLabels[i]}</code>:</td>
+  {/each}
+  </tr>
+  <tr>
+  {#each xGroups as group, i}
+    <td class='exemplar-inputs'>
+      {#each group as x}
+        <Instance x={x} size={size} />
+      {/each}
+    </td>
+  {/each}
+  </tr>
+</table>
+
+<button on:click=randomizeExamples()>Show More Examples</button>

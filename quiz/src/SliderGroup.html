@@ -1,0 +1,94 @@
+<script>
+  import {getQuery} from './utils';
+
+  export default {
+    data() {
+      return {
+        editable: getQuery('dataset') == 'mnist',
+        disabled: false
+      }
+    },
+    components: {
+      Editable: './Editable.html',
+      Slider: './Slider.html'
+    },
+    methods: {
+      selectValue(value, dim, i) {
+        for (let j = 0; j < dim.options.length; j++)
+          value[dim.index+j] = 0;
+        value[dim.index+i] = 1;
+        return value;
+      },
+      selectDisc(dim, option) {
+        let { value } = this.get();
+        const optionIndex = option.index;
+        const i = optionIndex - dim.index;
+        this.fire('select', {
+          dim: dim,
+          val: i
+        });
+        this.set({ value: this.selectValue(value, dim, i) });
+      }
+    }
+  }
+</script>
+
+<style>
+.slider {
+  padding-top: var(--gutter-sm);
+  white-space: nowrap;
+}
+.subhierarchy {
+  margin-top: calc(2 * var(--gutter-sm));
+}
+input[type="radio"] {
+  transform: scale(1.5);
+}
+select {
+  width: auto;
+}
+ul {
+  padding: 0;
+  list-style: none;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+ul.slider-group {
+  float: left;
+  width: calc(100% - 2rem - 5px);
+}
+</style>
+
+<div class='slider-group-wrapper clearfix'>
+  <ul class='slider-group'>
+    {#each $flatDims as dim, i (dim.index)}
+      <li class='slider'>
+        {#if editable}
+          <Editable bind:value=dim.name fieldId={dim.id} />:
+        {:else}
+          <code>{dim.name}</code>:
+        {/if}
+
+        {#if dim.type == 'continuous'}
+          <Slider bind:value=value[dim.index] min={dim.min} max={dim.max}
+            dim={dim} disabled={disabled}
+            on:slide
+            on:release
+          />
+        {:else}
+          <span class='buttons'>
+            {#each dim.options as option, j (j)}
+              <input
+                type='radio'
+                name={dim.index}
+                value={option.index}
+                checked={value[dim.index+j]==1 ? "checked" : ""}
+                on:change=selectDisc(dim,option)
+              />
+            {/each}
+          </span>
+        {/if}
+      </li>
+    {/each}
+  </ul>
+</div>

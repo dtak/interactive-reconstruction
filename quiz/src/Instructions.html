@@ -1,0 +1,413 @@
+<script>
+  import {toy2DExample, scaledMAE, Model, logEvent, getQuery} from './utils';
+
+  export default {
+    data() {
+      return {
+        screen: 1,
+        examples: [],
+        pq: 1,
+        s1: null,
+        s2: null,
+        s3: null,
+
+        c1: [null, null],
+        c2: [null, null],
+        c3: [null, null],
+        lqs: ["I'm confident I'm right", "The dial makes sense"],
+
+        z: [0,0],
+        z1: [0,0],
+        z2: [1,1],
+        z3: [0.4,0.75],
+
+        z_a: [0,0],
+        z_b: [0,1],
+        z_c: [0.25,0.75],
+        z_d: [1,0.33],
+
+        size: 54,
+
+        instructed: false,
+        x1Target: toy2DExample([0.6, 0.3]),
+        x2Target: toy2DExample([0.1, 0.9]),
+        x3Target: toy2DExample([0.2, 0]),
+        thresholdAgreement: 0.98,
+        selectionOptions: ['Low', 'Medium', 'High'],
+        skipTime: getQuery('dataset') == 'mnist' ? 45 : 30,
+        startedAt: new Date().getTime()
+      }
+    },
+
+    store: () => {
+      const pcts = {};
+      for (let p of [1,5,45,48,50,52,55,95,99])
+        pcts[p] = [p/100, p/100];
+      return new Model({
+        decoder: toy2DExample,
+        dataKey: 'grayscale64',
+        z_lims: [[0,1],[0,1]],
+        z_pcts: pcts,
+        Dx: 64*64,
+        Dz: 2,
+        Dc: [],
+        vars: [
+          { type: 'continuous' },
+          { type: 'continuous' }
+        ]
+      });
+    },
+
+    components: {
+      Instance: './InstanceViz.html',
+      GrayscaleImage: './GrayscaleImage.html',
+      Slider: './Slider.html',
+      TargetBar: './TargetBar.html',
+      TraversalList: './TraversalList.html',
+      ExemplarList: './ExemplarList.html',
+      LikertScale: './LikertScale.html'
+    },
+
+    methods: {
+      complete() {
+        const { viz, z1, z2, z3, s1, s2, s3, c1, c2, c3, startedAt } = this.get();
+        let numCorrect = 0;
+        numCorrect += (s1 == 'Low');
+        numCorrect += (s2 == 'High');
+        numCorrect += (s3 == 'Medium');
+        logEvent({
+          name: 'completed-instructions',
+          data: {
+            s1, s2, s3, c1, c2, c3, numCorrect, startedAt
+          }
+        }, {
+          modelIdx: -1,
+          modelKey: 'instructions',
+          dataKey: 'instructions',
+          viz: viz
+        });
+
+        this.fire('complete', {});
+      }
+    },
+
+    computed: {
+      x: ({ z }) => { return toy2DExample(z); },
+      x1: ({ z1 }) => { return toy2DExample(z1); },
+      x2: ({ z2 }) => { return toy2DExample(z2); },
+      x3: ({ z3 }) => { return toy2DExample(z3); },
+
+      x_a: ({ z_a }) => { return toy2DExample(z_a); },
+      x_b: ({ z_b }) => { return toy2DExample(z_b); },
+      x_c: ({ z_c }) => { return toy2DExample(z_c); },
+      x_d: ({ z_d }) => { return toy2DExample(z_d); },
+
+      x1Agg: ({ x1, x1Target }) => { return 1 - scaledMAE(x1, x1Target) },
+      x2Agg: ({ x2, x2Target }) => { return 1 - scaledMAE(x2, x2Target) },
+      x3Agg: ({ x3, x3Target }) => { return 1 - scaledMAE(x3, x3Target) }
+    }
+  }
+</script>
+
+<style>
+.centered {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.boxes {
+  max-width: 39rem;
+  margin: 0 auto;
+}
+.box {
+  border: 1px solid #ccc;
+  padding: 1rem;
+  margin-right: 1rem;
+  margin-bottom: 1rem;
+}
+.sliders, .picture, .box, .target {
+  display: inline-block;
+  vertical-align: top;
+}
+.sliders, .picture, .traversal {
+  text-align: center;
+}
+.target {
+  margin-left: 1rem;
+}
+:global(.picture .canvas-wrapper) {
+  border: 1px solid black;
+}
+.boxes + p {
+  margin-top: 0;
+}
+table {
+  text-align: left;
+}
+.explain-block {
+  text-align: center;
+  float: left;
+  margin-right: 1rem;
+  padding-right: 1rem;
+  max-width: 47%;
+}
+th {
+  font-weight: normal;
+  font-size: 18px;
+}
+ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.question-block {
+  float: left;
+  max-width: calc(53% - 2rem - 1px);
+}
+.options {
+  display: inline-block;
+  margin-left: 1rem;
+}
+.float-children > div {
+  float: left;
+}
+.centered + button {
+  margin-top: 1rem;
+}
+.question-block > p:first-child {
+  margin-top: 0;
+}
+</style>
+
+{#if screen == 1}
+  <p>In this study, we have boxes that make pictures. The boxes have dials on them. Our goal is to understand how changing the dials changes the pictures. Here are some example boxes:</p>
+
+  <div class='centered'>
+    <div class='boxes'>
+      <div class='box'>
+        <div class='sliders'>
+          <Slider bind:value=z_a[0] min={0} max={1} /> <br/>
+          <Slider bind:value=z_a[1] min={0} max={1} />
+        </div>
+        <div class='picture'>
+          <GrayscaleImage x={x_a} w={64} h={64} size={size} />
+        </div>
+      </div>
+      <div class='box'>
+        <div class='sliders'>
+          <Slider bind:value=z_b[0] min={0} max={1} /> <br/>
+          <Slider bind:value=z_b[1] min={0} max={1} />
+        </div>
+        <div class='picture'>
+          <GrayscaleImage x={x_b} w={64} h={64} size={size} />
+        </div>
+      </div>
+
+      <div class='box'>
+        <div class='sliders'>
+          <Slider bind:value=z_c[0] min={0} max={1} /> <br/>
+          <Slider bind:value=z_c[1] min={0} max={1} />
+        </div>
+        <div class='picture'>
+          <GrayscaleImage x={x_c} w={64} h={64} size={size} />
+        </div>
+      </div>
+      <div class='box'>
+        <div class='sliders'>
+          <Slider bind:value=z_d[0] min={0} max={1} /> <br/>
+          <Slider bind:value=z_d[1] min={0} max={1} />
+        </div>
+        <div class='picture'>
+          <GrayscaleImage x={x_d} w={64} h={64} size={size} />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {#if viz == 'sliders'}
+    <p>Try playing around with the dials to get a feel for what they do.</p>
+  {:elseif viz == 'traversals'}
+    <p>In the study, we will show you examples that have come out of particular boxes with different dial settings. Below is an example of what happens when <code>Dial 1</code> changes for different values of <code>Dial 2</code>:</p>
+
+    <div class='centered'>
+      <TraversalList dim={$flatDims[0]}/>
+    </div>
+
+    <p>Try clicking on "Show more examples." It will randomize <code>Dial 2</code> but still show you how pictures change as you slide <code>Dial 1</code>.</p>
+  {:elseif viz == 'exemplars'}
+    <p>In the study, we will show you examples that have come out of particular boxes with different dial settings. Below are examples of pictures. We've organized them into bins that have low, medium, and high values of <code>Dial 1</code>.</p>
+
+    <div class='centered'>
+      <ExemplarList dim={$flatDims[0]}/>
+    </div>
+
+    <p>Try clicking on "Show more examples." It will show you different random pictures still organized into bins based on <code>Dial 1</code>.</p>
+
+  {/if}
+
+  <button on:click="set({ screen: screen + 1})">Continue</button>
+{:else}
+
+  {#if viz == 'sliders'}
+
+    <p>In this study, we will ask you to make a specific picture to measure how easy the box is to use. Below are three practice questions. In each question, change the dials so that the picture aligns with a target:</p>
+
+  <div class='centered boxes'>
+    <div class='box'>
+      <div class='sliders'>
+        <Slider bind:value=z1[0] min={0} max={1} disabled={x1Agg >= thresholdAgreement} /> <br/>
+        <Slider bind:value=z1[1] min={0} max={1} disabled={x1Agg >= thresholdAgreement} /> <br/>
+        <small>Dials</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x1} w={64} h={64} size={size} />
+        <small>Picture</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x1Target} w={64} h={64} size={size} />
+        <small>Target</small>
+      </div>
+      <div class='target'>
+        <TargetBar value={x1Agg} target={thresholdAgreement} />
+      </div>
+    </div>
+
+    <div class='box'>
+      <div class='sliders'>
+        <Slider bind:value=z2[0] min={0} max={1} disabled={x2Agg >= thresholdAgreement} /><br/>
+        <Slider bind:value=z2[1] min={0} max={1} disabled={x2Agg >= thresholdAgreement} /><br/>
+        <small>Dials</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x2} w={64} h={64} size={size} />
+        <small>Picture</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x2Target} w={64} h={64} size={size} />
+        <small>Target</small>
+      </div>
+      <div class='target'>
+        <TargetBar value={x2Agg} target={thresholdAgreement} />
+      </div>
+    </div>
+
+    <div class='box'>
+      <div class='sliders'>
+        <Slider bind:value=z3[0] min={0} max={1} disabled={x3Agg >= thresholdAgreement} /><br/>
+        <Slider bind:value=z3[1] min={0} max={1} disabled={x3Agg >= thresholdAgreement} /><br/>
+        <small>Dials</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x3} w={64} h={64} size={size} />
+        <small>Picture</small>
+      </div>
+      <div class='picture'>
+        <GrayscaleImage x={x3Target} w={64} h={64} size={size} />
+        <small>Target</small>
+      </div>
+      <div class='target'>
+        <TargetBar value={x3Agg} target={thresholdAgreement} />
+      </div>
+    </div>
+  </div>
+
+  {#if Math.min(x1Agg,x2Agg,x3Agg)>=thresholdAgreement-0.001}
+  <p>Now you're ready! During the main quiz, you will answer questions about two boxes that produce different kinds of pictures.</p>
+
+  <p>We expect one of the boxes to be easier to use than the other. If a particular question is too hard, you'll be able to skip it after you've actively tried for {skipTime} seconds.</p>
+
+  <p>When you're ready to begin, click Proceed.</p>
+  <button on:click="fire('complete', {})">Proceed</button>
+
+  {/if}
+
+{:else}
+
+  {#if pq <= 3}
+    {#if viz=='traversals'}
+      <p>Okay, now let's try to guess were we would set <code>Dial 1</code> for the picture below. Don't worry about the value of <code>Dial 2</code>, just think about which column fits the picture best...</p>
+    {:else}
+      <p>Okay, now let's try to categorize some new pictures and put them in the right bins.</p>
+    {/if}
+
+    <div class='blocks clearfix'>
+      {#if viz=='traversals'}
+        <div class='explain-block'>
+          <TraversalList dim={$flatDims[0]}/>
+        </div>
+      {:else}
+        <div class='explain-block explain-block-exemplars'>
+          <ExemplarList dim={$flatDims[0]}/>
+        </div>
+      {/if}
+
+      <div class='question-block'>
+        {#if pq == 1}
+            <p>Which of the following best describes the value of <code>Dial 1</code> for the example below?</p>
+            <div class='centered'>
+              <div class='clearfix float-children'>
+            <div class='picture'><GrayscaleImage x={x1} w={64} h={64} size={size} /></div>
+            <div class='options'>
+              {#each selectionOptions as o}
+                <div>
+                  <label><input type='radio' bind:group=s1 value={o}><code>{o}</code></label>
+                </div>
+              {/each}
+            </div>
+            </div>
+            </div>
+            <p>How do you feel about your answer?</p>
+            <div class='centered'>
+              <LikertScale bind:values=c1 questions={lqs}/>
+            </div>
+            <button disabled={c1.includes(null) || !s1} on:click="set({ pq: pq+1 })">Continue</button>
+        {:elseif pq == 2}
+            <p>Which of the following best describes the value of <code>Dial 1</code> for the example below?</p>
+            <div class='centered'>
+              <div class='clearfix float-children'>
+            <div class='picture'><GrayscaleImage x={x2} w={64} h={64} size={size} /></div>
+            <div class='options'>
+            {#each selectionOptions as o}
+              <div>
+                <label><input type='radio' bind:group=s2 value={o}><code>{o}</code></label>
+              </div>
+            {/each}
+            </div>
+            </div>
+            </div>
+            <p>How do you feel about your answer?</p>
+            <div class='centered'>
+              <LikertScale bind:values=c2 questions={lqs}/>
+            </div>
+            <button disabled={c2.includes(null) || !s2} on:click="set({ pq: pq+1 })">Continue</button>
+        {:elseif pq == 3}
+            <p>Which of the following best describes the value of <code>Dial 1</code> for the example below?</p>
+            <div class='centered'>
+              <div class='clearfix float-children'>
+              <div class='picture'><GrayscaleImage x={x3} w={64} h={64} size={size} /></div>
+              <div class='options'>
+                {#each selectionOptions as o}
+                  <div>
+                    <label><input type='radio' bind:group=s3 value={o}><code>{o}</code></label>
+                  </div>
+                {/each}
+              </div>
+              </div>
+            </div>
+            <p>How do you feel about your answer?</p>
+            <div class='centered'>
+              <LikertScale bind:values=c3 questions={lqs}/>
+            </div>
+            <button disabled={c3.includes(null) || !s3} on:click="set({ pq: pq+1 })">Continue</button>
+        {/if}
+      </div>
+    </div>
+  {:else}
+    <p>Now you're ready! In the quiz that follows, you'll see different boxes and pictures, and some of the questions may be harder. It's more important to be accurate than fast, but still go as fast as you can while being accurate. If some example is just confusing, you can guess and say you are not as confident as you were in the practice questions.
+    </p>
+    <button on:click="complete()">Proceed</button>
+  {/if}
+
+{/if}
+
+{/if}

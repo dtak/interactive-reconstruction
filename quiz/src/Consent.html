@@ -1,0 +1,96 @@
+<script>
+  import {getQuery} from './utils';
+
+  export default {
+    data() {
+      return {
+        dataset: getQuery('dataset'),
+        qualitative: getQuery('qualitative'),
+        anonymized: getQuery('anonymized')
+      };
+    }
+  }
+</script>
+
+<div class='warning-message'><strong>Note for MTurk users:</strong> if you just completed a similar HIT, please don't accept this one -- we require that each respondent be unique!</div>
+<h1>
+  Informed Consent for Research
+</h1>
+<h3>
+  <small>
+    Investigator:
+    {#if anonymized}
+      (Anonymized for peer review)
+    {:else}
+      Finale Doshi-Velez at Harvard University (finale@seas.harvard.edu)
+    {/if}
+  </small>
+</h3>
+
+<p>
+  The purpose of this study is to evaluate the interpretability of different machine learning algorithms and their outputs.  The experiment will consist of a series of pre-task instructions, then the primary tasks related to machine learning interpretability, and finally a brief post-task survey.
+</p>
+
+<p>
+  {#if dataset == 'mnist'}
+    {#if qualitative}
+      In total your participation in this experiment will take about 1 hour.
+    {:else}
+      In total your participation in this experiment will take about 10-15 minutes.
+    {/if}
+  {:else}
+    In total your participation in this experiment will take about 20-25 minutes.
+  {/if}
+</p>
+
+<p>
+  You must be at least 18 years of age to participate.  
+</p>
+
+<p>
+  Your participation in any part of this study is voluntary. You have the right to refuse to participate altogether, or withdraw from the study at any time without any repercussions. There are no known risks associated with your participation in this research beyond those of everyday life.  
+</p>
+
+<p>
+As a research participant, you will receive compensation.
+  {#if dataset == 'mnist'}
+    {#if qualitative}
+      If you complete the study, you will be rewarded with a $20 Amazon gift card.
+    {:else}
+      If you complete the study, you will be rewarded with $3.75.
+    {/if}
+  {:else}
+    If you complete the study, you will be rewarded with $6.00.
+  {/if}
+  You will receive a code for payment at the end of the study.
+  The task will consist of several interactive visualizations and quizzes about machine learning models.
+<p>
+
+<p>
+  Confidentiality of the research records will be strictly maintained. The data will be collected on a secure server. The output of the study will be based on an aggregation of data collected from multiple informants. Diligent care will be taken to protect identities and sensitive information. 
+</p>
+
+<p>
+    Research team members, who will sign a confidentiality agreement, will have access to the content of your answers as will the IRB at the governing research institution. Even though we will take every effort to protect your privacy, a breach of confidentiality may become a risk due to unforeseen events. If you have questions, concerns, or complaints, or think the research has hurt you, please feel free to contact the study investigator,
+    {#if anonymized}
+      (Anonymized for peer review).
+    {:else}
+      Finale Doshi-Velez.
+    {/if}
+
+    For questions, concerns, suggestions, or complaints that are not being addressed by the researcher, or research-related harm, you can contact the Committee on the Use of Human Subjects in Research at
+
+    {#if anonymized}
+      (Anonymized for peer review).
+    {:else}
+      Harvard University, 1414 Massachusetts Avenue, Second Floor, Cambridge, MA 02138 (Phone: 617-496-2847; Email: cuhs@fas.harvard.edu).
+    {/if}
+</p>
+
+<p>
+  You may print this copy of the Consent Document for your records.
+</p>
+
+<p>
+  If you are interested in participating in the study, click the PROCEED button. If you are NOT interested in participating in the study, please exit the survey.
+</p>

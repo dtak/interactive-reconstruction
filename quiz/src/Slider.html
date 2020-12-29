@@ -1,0 +1,118 @@
+<script>
+  import noUiSlider from 'nouislider/distribute/nouislider.js';
+
+  export default {
+    data() {
+      return {
+        min: -3,
+        max: 3,
+        value: 0,
+        start: 0,
+        step: 0.01,
+        dim: null,
+        oldDirection: null,
+        numStepsSlid: 0,
+        numReversals: 0
+      }
+    },
+
+    onstate({ changed, current, previous }) {
+      if (this.refs.slider && this.refs.slider.noUiSlider) {
+        const slider = this.refs.slider.noUiSlider;
+        if (Math.abs(parseFloat(slider.get()) - current.value) > current.step) {
+          this.set({ oldDirection: null, oldValue: current.value });
+          slider.set(current.value);
+        }
+
+        if (current.disabled) {
+          this.refs.slider.setAttribute('disabled', true);
+        } else {
+          this.refs.slider.removeAttribute('disabled');
+        }
+      }
+    },
+
+    oncreate() {
+      const { min, max, start, step, value, dim, disabled } = this.get();
+
+
+      const opts = {
+        range: { min, max },
+        step: step,
+        start: start
+      };
+
+      noUiSlider.create(this.refs.slider, opts);
+
+      this.refs.slider.noUiSlider.set(value);
+
+      const that = this;
+      const slider = this.refs.slider.noUiSlider;
+
+      slider.on('update', (values) => {
+        const { value } = that.get();
+        that.set({ value: parseFloat(values[0]), oldValue: value });
+      });
+
+      slider.on('end', () => {
+        that.fire('release', {});
+      });
+
+      slider.on('slide', (values, handle, unenc, tap, positions) => {
+        const { oldDirection, oldValue, step, numStepsSlid, numReversals } = that.get();
+        const newValue = parseFloat(values[0]);
+        const newDirection = Math.sign(newValue - oldValue);
+        const dnrs = 1 * (oldDirection !== null) * (oldDirection !== newDirection);
+
+        that.set({
+          numStepsSlid: numStepsSlid + 1,
+          numReversals: numReversals + dnrs,
+          oldDirection: newDirection
+        });
+
+        that.fire('slide', {
+          dim,
+          positions,
+          reversed: dnrs,
+          direction: newDirection,
+          distanceSlid: (numStepsSlid + 1) * step,
+          numReversals: (numReversals + dnrs)
+        });
+      });
+    },
+
+    methods: {
+      reset() {
+        const { start } = this.get();
+        this.refs.slider.noUiSlider.set(start);
+      }
+    }
+  }
+</script>
+
+<style>
+.wrapper {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: middle;
+  margin: 0 1rem;
+}
+.latent-slider {
+  width: 150px;
+  display: inline-block;
+}
+.fullwidth {
+  margin: 0;
+  width: 100%;
+}
+.fullwidth .latent-slider {
+  width: calc(100% - 2rem);
+}
+.reset-slider {
+  vertical-align: text-top;
+}
+</style>
+
+<div class="{disabled ? 'wrapper disabled' : 'wrapper'}">
+  <div class='latent-slider' ref:slider></div>
+</div>

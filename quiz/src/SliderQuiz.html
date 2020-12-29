@@ -1,0 +1,427 @@
+<script>
+  import * as tf from '@tensorflow/tfjs';
+  import {copyArray, range, sampleOne, mse, scaledMAE, pctAgreement, getQuery, bwIoU} from './utils';
+
+  export default {
+    data() {
+      const thresholds = {
+        mnist: 0.75,
+        chopsticks: 0.999
+      }
+
+      return {
+        size: getQuery('dataset') == 'mnist' ? 150 : 200,
+        input: [],
+        prevInput: [],
+        skipTime: getQuery('dataset') == 'mnist' ? 45 : 30,
+        thresholdAgreement: thresholds[getQuery('dataset')] || 0.9,
+        undoHistory: [],
+        errorHistory: [],
+        isMNIST: getQuery('dataset') == 'mnist',
+        debugging: getQuery('debugging'),
+        superimposed: getQuery('dataset') != 'mnist',
+        currentSlider: null,
+        currentDirection: null,
+        qualitative: getQuery('qualitative'),
+        sinelinesTolerance: 0.5,
+        showRandomizeUndo: false,
+        stats: {
+          numDimSwitches: 0,
+          numDirSwitches: 0,
+          numRandomizes: 0,
+          numUndos: 0,
+        }
+      }
+    },
+
+    components: {
+      Instance: './InstanceViz.html',
+      SliderGroup: './SliderGroup.html',
+      TargetBar: './TargetBar.html'
+    },
+
+    oncreate() {
+      const { input, xAgreement } = this.get();
+      this.set({
+        startTime: new Date().getTime(),
+        lastProgress: new Date().getTime(),
+        prevInput: copyArray(input),
+        undoHistory: [copyArray(input)]
+      });
+    },
+
+    onstate({ changed, current, previous }) {
+      if (changed.input) {
+        const { $z_lims } = this.get();
+        const errorHistory = current.errorHistory;
+        const time = new Date().getTime();
+        const minGap = 100;
+        let gap = minGap;
+
+        const stats = current.stats;
+        stats['slideDistances'] = stats['slideDistances'] || {};
+        if (window.data_) {
+          window.data_.contDims.forEach((d) => {
+            const i = d.index;
+            const j = d.contIndex;
+            const dz = (current.input[i] - current.prevInput[i]) / ($z_lims[j][1] - $z_lims[j][0]);
+            stats['slideDistances'][j] = (stats['slideDistances'][j] || 0) + Math.abs(dz);
+          });
+        }
+        this.set({ prevInput: copyArray(current.input) });
+
+        if (errorHistory.length) {
+          gap = time - errorHistory.slice(-1)[0].t;
+        }
+        if (gap >= minGap) {
+          errorHistory.push({
+            t: new Date().getTime(),
+            z: copyArray(current.input),
+            dim: current.currentSlider,
+            dir: current.currentDirection,
+            xAgg: current.xAgreement,
+            xMse: current.xError
+          });
+          this.set({ errorHistory, lastProgress: new Date().getTime() });
+        }
+      }
+    },
+
+    methods: {
+      undo() {
+        const { undoHistory, stats, input } = this.get();
+        if (undoHistory.length >= 2) {
+          undoHistory.pop();
+          stats['numUndos'] = (stats['numUndos'] || 0) + 1
+          this.set({
+            undoHistory,
+            stats,
+            currentSlider: null,
+            currentDirection: null,
+            input: copyArray(undoHistory.slice(-1)[0]),
+            prevInput: copyArray(undoHistory.slice(-1)[0])
+          });
+        }
+      },
+
+      randomizeSliders() {
+        const { $sampleCMZ, stats, undoHistory } = this.get();
+        const newInput = $sampleCMZ();
+        stats['numRandomizes'] = (stats['numRandomizes'] || 0) + 1;
+        undoHistory.push(copyArray(newInput))
+        this.set({
+          input: newInput,
+          prevInput: copyArray(newInput),
+          currentSlider: null,
+          currentDirection: null,
+          stats,
+          undoHistory
+        });
+      },
+
+      handleSelect(event) {
+        const { stats, undoHistory, input } = this.get();
+        const i = event.dim.discIndex;
+        undoHistory.push(copyArray(input));
+        stats['numSelects'] = stats['numSelects'] || {};
+        stats['numSelects'][i] = (stats['numSelects'][i] || 0) + 1;
+        this.set({ stats, undoHistory });
+      },
+
+      handleSlide(event) {
+        const { stats, currentSlider, errorHistory, xAgreement, xError, input } = this.get();
+        const i = event.dim.contIndex;
+        const dir = event.direction;
+        stats['numSlides'] = stats['numSlides'] || {};
+        stats['numSlides'][i] = (stats['numSlides'][i] || 0) + 1;
+        let updateHistory = false;
+        if (i != currentSlider) {
+          stats['numDimSwitches'] = (stats['numDimSwitches'] || 0) + 1;
+          updateHistory = true;
+        } else if (event.reversed) {
+          stats['numDirSwitches'] = (stats['numDirSwitches'] || 0) + 1;
+          updateHistory = true;
+        }
+        if (updateHistory) {
+          errorHistory.push({
+            t: new Date().getTime(),
+            z: copyArray(input),
+            dim: i,
+            dir: dir,
+            xAgg: xAgreement,
+            xMse: xError
+          });
+        }
+        this.set({ stats, errorHistory, currentSlider: i, currentDirection: dir });
+      },
+
+      handleRelease() {
+        const { input, undoHistory } = this.get();
+        undoHistory.push(copyArray(input));
+        this.set({ undoHistory });
+      },
+
+      nextQuestion(status) {
+        const { questionIdx, startTime, stats, $sampleCMZ, xAgreement, currentSlider, currentDirection,
+          errorHistory, xError, input, target, output, targetX } = this.get();
+
+        errorHistory.push({
+          t: new Date().getTime(),
+          z: copyArray(input),
+          dim: currentSlider,
+          dir: currentDirection,
+          xAgg: xAgreement,
+          xMse: xError
+        });
+
+        this.root.fire('log', {
+          name: `slider-quiz-${status}`,
+          data: {
+            startTime: startTime,
+            duration: new Date().getTime() - startTime,
+            zTarget: target,
+            zChosen: input,
+            xError: xError,
+            xAgreement: xAgreement,
+            errorHistory: errorHistory,
+            stats: stats
+          }
+        });
+
+        const newInput = copyArray($sampleCMZ());
+
+        this.set({
+          input: newInput,
+          questionIdx: questionIdx + 1,
+          startTime: new Date().getTime(),
+          lastProgress: new Date().getTime(),
+          currentSlider: null,
+          prevInput: copyArray(newInput),
+          undoHistory: [input],
+          errorHistory: [],
+          stats: {}
+        });
+      }
+    },
+
+    computed: {
+      elapsedTime: ({ startTime, lastProgress }) => {
+        return (lastProgress - startTime) / 1000.0;
+      },
+      timeDeltas: ({ startTime, errorHistory }) => {
+        const res = [];
+        let t1 = startTime;
+        for (let h of errorHistory) {
+          const t2 = h.t;
+          res.push(t2-t1);
+          t1 = t2;
+        }
+        return res;
+      },
+      activeTime: ({ timeDeltas }) => {
+        let res = 0;
+        for (let dt of timeDeltas) {
+          if (dt < 3000) {
+            res += dt;
+          }
+        }
+        return res / 1000.0;
+      },
+      triedHardEnough: ({ activeTime, skipTime }) => {
+        return activeTime > skipTime;
+      },
+      target: ({ questionIdx, $sampleCMZ }) => {
+        return $sampleCMZ();
+      },
+      output: ({ input, $decode }) => {
+        return $decode(input);
+      },
+      targetX: ({ target, $decode }) => {
+        return $decode(target);
+      },
+      zError: ({ input, target }) => {
+        return mse(input, target);
+      },
+      xError: ({ output, targetX }) => {
+        return mse(output, targetX);
+      },
+      xDisagreement: ({ output, targetX, $dataKey, sinelinesTolerance }) => {
+        if ($dataKey == 'sinelines') {
+          return 1-pctAgreement(output, targetX, sinelinesTolerance);
+        } else if ($dataKey == 'mnist') {
+          return 1-bwIoU(output, targetX);
+        } else {
+          return scaledMAE(output, targetX);
+        }
+      },
+      xAgreement: ({ xDisagreement }) => {
+        return 1 - xDisagreement;;
+      },
+      gettingClose: ({ xError, improvingMse }) => {
+        return xError < improvingMse;
+      },
+      goodEnough: ({ xAgreement, thresholdAgreement }) => {
+        return xAgreement >= thresholdAgreement - 0.001;
+      },
+      slideDistance: ({ stats, $z_lims }) => {
+        let res = 0;
+        if (stats.slideDistances)
+          for (const [i, num] of Object.entries(stats.slideDistances))
+            res += num
+        return res;
+      }
+    }
+  }
+</script>
+
+<style>
+  .slider-wrapper {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-right: calc(-1 * var(--gutter));
+    margin-bottom: calc(-1 * var(--gutter));
+  }
+  .slider-input, .slider-output {
+    margin-right: var(--gutter);
+    margin-bottom: var(--gutter);
+  }
+  .status-msg {
+    margin-bottom: 0;
+  }
+  .target-vs-output.superimposed {
+    position: relative;
+  }
+  .superimposed .target {
+    position: absolute;
+    top: 0;
+    opacity: 0.5;
+  }
+  .slider-input, .slider-output {
+    max-width: calc(50% - var(--gutter));
+  }
+  .picture {
+    float: left;
+  }
+  h4, .button-wrapper {
+    text-align: center;
+  }
+  .output.picture {
+    margin-right: 5px;
+  }
+
+  strong + p {
+    margin: 10px 0;
+  }
+
+  .progbar {
+    margin-top: 1rem;
+  }
+</style>
+
+<p style='margin-top: 0'>
+Working as efficiently as you can, try to change the dials on the left to align the pictures on the right.
+{#if isMNIST}
+  As you get close to alignment, you may find it helpful to <strong>overlay the two pictures</strong> by clicking the button below.
+  Finally, you can also <strong>relabel the controls</strong> on the left by clicking on the labels.
+{:else}
+  <strong>For convenience, we have overlaid the two pictures</strong>, but you can separate them by clicking the "Separate Pictures" button below.
+{/if}
+</p>
+
+<p>
+If you actively try to solve the task for {skipTime} seconds but cannot, you'll be able to skip it and move on without penalty.
+</p>
+
+<div class='slider-wrapper clearfix'>
+  <div class='slider-input clearfix'>
+    <SliderGroup dims={$flatDims} bind:value=input editable=0
+      disabled={goodEnough}
+      on:slide="handleSlide(event)"
+      on:select="handleSelect(event)" 
+      on:release="handleRelease()" />
+    {#if showRandomizeUndo}
+      <div class='button-wrapper'>
+        {#if undoHistory.length >= 2}
+          <button class='button' on:click=undo()>Undo</button>
+        {:else}
+          <button class='button' disabled>Undo</button>
+        {/if}
+        <button class='button' on:click=randomizeSliders()>Randomize</button>
+      </div>
+    {/if}
+    {#if isMNIST}
+      <small>⬆️ Click on the labels above to rename</small>
+    {/if}
+  </div>
+
+  <div class='slider-output clearfix'>
+    <div class='target-vs-output' class:superimposed=superimposed>
+      <div class='output picture'>
+        <Instance x={output} size={size}/>
+        {#if superimposed}
+          <h4>Picture and Target</h4>
+        {:else}
+          <h4>Picture</h4>
+        {/if}
+      </div>
+
+      <div class='target picture'>
+        <Instance x={targetX} size={size} showError={sinelinesTolerance}/>
+        {#if !superimposed}
+          <h4>Target</h4>
+        {/if}
+      </div>
+
+      <div class='superimpose-button button-wrapper'>
+        {#if superimposed}
+          <button class='button' on:click="set({ superimposed: false })">Separate Pictures</button>
+        {:else}
+          <button class='button' on:click="set({ superimposed: true })">Overlay Pictures</button>
+        {/if}
+      </div>
+    </div>
+  </div>
+
+  <div class='slider-progress clearfix'>
+    <div class='progbar'>
+      <TargetBar value={xAgreement} target={thresholdAgreement} />
+    </div>
+  </div>
+</div>
+
+{#if debugging}
+  <dl class='stats'>
+    <dt>Elapsed time</dt>
+    <dd>{elapsedTime}</dd>
+    <dt>Active time</dt>
+    <dd>{activeTime}</dd>
+    <dt>Agreement</dt>
+    <dd>{xAgreement}</dd>
+    <dt>Input</dt>
+    <dd>{input}</dd>
+    <dt>Target</dt>
+    <dd>{target}</dd>
+    <dt>Slide Distance</dt>
+    <dd>{slideDistance}</dd>
+    <dt>MSE</dt>
+    <dd>{xError}</dd>
+    <dt>Num Randomizes</dt>
+    <dd>{stats.numRandomizes}</dd>
+    <dt>Num Undos</dt>
+    <dd>{stats.numUndos}</dd>
+    <dt>Last Error History Entry</dt>
+    <dd><pre>{JSON.stringify(errorHistory[errorHistory.length-1], null, 2)}</pre></dd>
+  </dl>
+{/if}
+
+{#if goodEnough}
+  <button class='button is-success next-question-button'
+    on:click=nextQuestion('success')>Move onto next question</button>
+{:elseif triedHardEnough}
+  <button class='button is-warning next-question-button'
+    on:click=nextQuestion('skipped')>Skip question (no penalty)</button>
+{:elseif qualitative}
+  <button class='button is-warning next-question-button'
+    on:click=nextQuestion('skipped')>Skip question</button>
+{/if}

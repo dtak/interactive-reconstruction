@@ -1,0 +1,89 @@
+<script>
+  import {copyArray} from './utils';
+
+  export default {
+    data() {
+      return {
+        modelIdx: 1,
+        numModels: 2,
+        questionIdx: 0,
+        numQuestions: 10,
+        viz: 'sliders',
+      }
+    },
+
+    computed: {
+      progress: ({ modelIdx, numModels, questionIdx, numQuestions }) => {
+        return 100 * ((modelIdx + (questionIdx / numQuestions)) / numModels);
+      },
+      defaultInput: ({ $sampleCMZ }) => {
+        return copyArray($sampleCMZ());
+      }
+    },
+
+		oncreate() {
+			document.body.classList.add("has-fixed-footer");
+		},
+
+		ondestroy() {
+			document.body.classList.remove("has-fixed-footer");
+		},
+
+		components: {
+      SliderQuiz: './SliderQuiz.html',
+      InstanceQuiz: './InstanceQuiz.html',
+		}
+  }
+</script>
+
+<style>
+.pull-left {
+  float: left;
+}
+.pull-right {
+  float: right;
+}
+:global(.next-question-button) {
+  position: fixed;
+  left: 50%;
+	transform: translateX(-50%);
+  bottom: 1.5rem;
+  z-index: 2;
+}
+progress {
+	display: inline-block;
+	width: auto;
+}
+.quiz-footer {
+	padding: 1rem;
+  width: calc(var(--page-width) - 2rem);
+	position: fixed;
+	bottom: 0;
+	left: 50%;
+	transform: translateX(-50%);
+	background: white;
+	outline: 1px solid #ccc;
+	z-index: 1;
+}
+</style>
+
+<div class='clearfix quiz-footer'>
+	<div class='pull-right'>
+    HIT Progress:
+    <br>
+		<progress class='progress' value={progress} max='100'></progress>
+	</div>
+	<div class='pull-left'>
+		<h4>
+		 Stage {modelIdx+1} of {numModels}
+     <br>
+     Question {questionIdx+1} of {numQuestions}
+		</h4>
+	</div>
+</div>
+
+{#if viz == 'sliders'}
+  <SliderQuiz input={defaultInput} bind:questionIdx=questionIdx />
+{:else}
+  <InstanceQuiz input={defaultInput} bind:questionIdx=questionIdx viz={viz} />
+{/if}

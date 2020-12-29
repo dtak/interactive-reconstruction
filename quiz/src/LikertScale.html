@@ -1,0 +1,70 @@
+<script>
+  export default {
+    data() {
+      return {
+        questions: null,
+        values: null,
+        scale: [1, 2, 3, 4, 5],
+        headers: ["Strongly Disagree", "Disagree", "Neutral", "Agree", "Strongly Agree"]
+      }
+    },
+
+    methods: {
+      setValue(i, option) {
+        const { values, value } = this.get();
+        if (values) {
+          values[i] = option;
+          this.set({ values });
+        } else {
+          this.set({ value: option });
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+table {
+  font-size: 14px;
+  border-collapse: collapse;
+}
+td:hover {
+  cursor: pointer;
+  background: #e8e8e8;
+}
+td, th {
+  border: 1px solid #ccc;
+  width: calc(67% / 5);
+}
+td:first-child {
+  width: 33%;
+  font-size: 20px;
+}
+td:first-child:hover {
+  cursor: initial !important;
+  background: transparent !important;
+}
+</style>
+
+<table>
+  <thead>
+    <tr>
+      <th></th>
+      {#each headers as h}
+        <th>{h}</th>
+      {/each}
+    </tr>
+  </thead>
+  <tbody>
+    {#each (values || [value]) as v, i}
+      <tr>
+        <td>{(questions || [question])[i]}</td>
+        {#each scale as option}
+          <td on:click=setValue(i,option)>
+            <input type='radio' class='radirow-button' bind:group=v value={option} />
+          </td>
+        {/each}
+      </tr>
+    {/each}
+  </tbody>
+</table>

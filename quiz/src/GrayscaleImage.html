@@ -1,0 +1,62 @@
+<script>
+  export default {
+    data() {
+      return {
+        x: [],
+        w: 64,
+        h: 64,
+        size: 64,
+        round: false
+      }
+    },
+
+    computed: {
+      buffer: ({ x, w, h, round }) => {
+        const buf = new Uint8ClampedArray(w * h * 4);
+        let k = 0;
+        for (let j = 0; j < h; j++) {
+          for (let i = 0; i < w; i++) {
+            const pos = (j * w + i) * 4;
+            const xk = round ? Math.round(x[k]) : x[k];
+            buf[pos] = Math.round(xk * 255);
+            buf[pos+1] = Math.round(xk * 255);
+            buf[pos+2] = Math.round(xk * 255);
+            buf[pos+3] = 255;
+            k += 1;
+          }
+        }
+        return buf;
+      }
+    },
+
+    onupdate({_changed, current, _previous}) {
+      const canvas = this.refs.canvas;
+      const ctx = canvas.getContext('2d');
+      const idata = ctx.createImageData(current.w, current.h);
+      idata.data.set(current.buffer);
+      ctx.putImageData(idata, 0, 0);
+    },
+
+    oncreate() {
+      const { w, h, buffer } = this.get();
+      const canvas = this.refs.canvas;
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      const idata = ctx.createImageData(w, h);
+      idata.data.set(buffer);
+      ctx.putImageData(idata, 0, 0);
+    }
+  }
+</script>
+
+<style>
+canvas {
+  transform-origin: top left;
+}
+</style>
+
+<div class='canvas-wrapper' style="width: {size}px; height: {size}px;">
+  <canvas ref:canvas style="transform: scaleX({size / w}) scaleY({size / h}); margin: 0;">
+  </canvas>
+</div>

@@ -1,0 +1,67 @@
+<script>
+  import * as d3 from 'd3'; 
+  import {Scale} from './scale';
+
+  export default {
+    data() {
+      return {
+        showError: 0
+      }
+    },
+    computed: {
+      strokeWidth: ({ lineWidth }) => {
+        return `${lineWidth}px`;
+      },
+      scale: ({ size, xmin, xmax, ymin, ymax }) => {
+        return new Scale(size, size, [xmin, xmax-1], [ymin, ymax-1]);
+      },
+      line: ({ scale }) => {
+        return d3.line()
+          .x(d => scale.u(d[0]))
+          .y(d => scale.v(d[1]));
+      },
+      path: ({ x, line }) => {
+        const data = [];
+        for (let i = 0; i < x.length; i++)
+          data.push([i,x[i]]);
+        return line(data);
+      },
+      zero: ({ x, line }) => {
+        const data = [];
+        for (let i = 0; i < x.length; i++)
+          data.push([i,0]);
+        return line(data);
+      },
+      pathAbove: ({ x, line, showError }) => {
+        const data = [];
+        for (let i = 0; i < x.length; i++)
+          data.push([i,x[i]+showError]);
+        return line(data);
+      },
+      pathBelow: ({ x, line, showError }) => {
+        const data = [];
+        for (let i = 0; i < x.length; i++)
+          data.push([i,x[i]-showError]);
+        return line(data);
+      }
+    }
+  }
+</script>
+
+<style>
+  svg {
+    border: 1px solid var(--border-color);
+  }
+</style>
+
+<svg width="{scale.width}" height="{scale.height}" viewBox="0 0 {scale.width} {scale.height}">
+  <g>
+    <path d={path} stroke='#c51b8a' stroke-width='2px' fill='none'/>
+    {#if showError}
+      <path d={pathAbove} stroke='#c51b8a' stroke-width='1px' fill='none' stroke-dasharray="4 1"/>
+      <path d={pathBelow} stroke='#c51b8a' stroke-width='1px' fill='none' stroke-dasharray="4 1"/>
+    {/if}
+    <path d={zero} stroke='rgba(0,0,0,0.2)' stroke-width='2px' fill='none' stroke-dasharray="4 1"/>
+  </g>
+</svg>
+
