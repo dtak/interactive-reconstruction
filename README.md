@@ -120,4 +120,12 @@ project's inception.
 
 ## Citation
 
-TODO
+```
+@inproceedings{ross2021evaluating,
+  author = {Ross, Andrew Slavin and Chen, Nina and Hang, Elisa Zhao and Glassman, Elena L. and Doshi-Velez, Finale},
+  title = {Evaluating the Interpretability of Generative Models by Interactive Reconstruction},
+  booktitle = {Proceedings of the 2021 CHI Conference on Human Factors in Computing Systems},
+  year = {2021},
+  doi = {10.1145/3411764.3445296}
+}
+```
