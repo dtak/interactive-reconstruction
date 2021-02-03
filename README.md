@@ -2,7 +2,7 @@
 
 This repository contains code, models, and data for the CHI 2021 paper
 ["Evaluating the Interpretability of Generative Models by Interactive
-Reconstruction."](TODO)
+Reconstruction."](https://arxiv.org/abs/2102.01264)
 
 ## Main Idea
 
@@ -48,7 +48,7 @@ evaluating the interpretability of generative model representations. This
 method is based on the idea of "interactive reconstruction," where human users
 try to manipulate representation dimensions to reconstruct a target input.
 
-The paper is available [here](TODO), and you can also try out [the actual
+The paper is available [here](https://arxiv.org/abs/2102.01264), and you can also try out [the actual
 studies we ran](https://hreps.s3.amazonaws.com/quiz/manifest.html) live in your
 web browser.
 
